@@ -280,6 +280,21 @@ class InstagramBridge extends BridgeAbstract
         // Sets fallbackMode to false
         $this->fallbackMode = false;
         if (!is_null($this->getInput('u'))) {
+            if (!$this->getOption('session_id') and !$this->getOption('ds_user_id'))
+            {
+                try {
+                    return json_decode($this->getContents(self::URI . 'api/v1/users/web_profile_info/?username=' . $this->getInput('u')));
+                } catch (HttpException $e) {
+                    // Detect when rate limit is hit.
+                    if ($e->getCode() == 401)
+                    {
+                        if (json_decode($e->response->getBody())->message == "Please wait a few minutes before you try again.") {
+                            throwRateLimitException();
+                        }
+                    }
+                    // Otherwise continue with different endpoints.
+                }
+            }
             try {
                 $userId = $this->getInstagramUserId($this->getInput('u'));
 
